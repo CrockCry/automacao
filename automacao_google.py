@@ -345,31 +345,31 @@ if dados_inscricao_atual['tem_responsavel_geral'].lower() == 'sim':
         for responsavel_atual in dados_inscricao_atual['responsaveis']:
             print(f"\n--- Adicionando Responsável: {responsavel_atual['nome_responsavel']} ---")
 
-        # --- Clicar no botão '+ Novo' para adicionar Responsável ---
-        print("Tentando clicar no botão '+ Novo' da aba Responsável...")
-        add_responsavel_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), '+ Novo')]")) 
-        )
-        add_responsavel_button.click()
-        print("Botão '+ Novo' da aba Responsável clicado com sucesso!")
-        time.sleep(3) 
+            # --- Clicar no botão '+ Novo' para adicionar Responsável ---
+            print("Tentando clicar no botão '+ Novo' da aba Responsável...")
+            add_responsavel_button = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), '+ Novo')]")) 
+            )
+            add_responsavel_button.click()
+            print("Botão '+ Novo' da aba Responsável clicado com sucesso!")
+            time.sleep(3) 
 
-        # --- Mudar o foco para a nova aba/janela ---
-        new_window_handle = None
-        WebDriverWait(driver, 10).until(EC.number_of_windows_to_be(2)) 
+            # --- Mudar o foco para a nova aba/janela ---
+            new_window_handle = None
+            WebDriverWait(driver, 10).until(EC.number_of_windows_to_be(2)) 
         
-        for window_handle in driver.window_handles:
-            if window_handle != main_window_handle:
-                new_window_handle = window_handle
-                break
+            for window_handle in driver.window_handles:
+                if window_handle != main_window_handle:
+                    new_window_handle = window_handle
+                    break
         
-        if new_window_handle:
-            driver.switch_to.window(new_window_handle)
-            print(f"Foco mudado para a nova janela (Handle: {new_window_handle})")
-            print(f"URL da nova janela: {driver.current_url}") 
+            if new_window_handle:
+                driver.switch_to.window(new_window_handle)
+                print(f"Foco mudado para a nova janela (Handle: {new_window_handle})")
+                print(f"URL da nova janela: {driver.current_url}") 
 
-            # --- PREENCHER OS CAMPOS DO RESPONSÁVEL AQUI (AJUSTADO COM OS NAMES CORRETOS) ---
-            print(f"Preenchendo formulário do responsável para {responsavel_atual['nome_responsavel']}...")
+                # --- PREENCHER OS CAMPOS DO RESPONSÁVEL AQUI (AJUSTADO COM OS NAMES CORRETOS) ---
+                print(f"Preenchendo formulário do responsável para {responsavel_atual['nome_responsavel']}...")
             
             # 1. Campo Nome do Responsável (By.NAME, "nome_responsavel")
             campo_nome_responsavel = WebDriverWait(driver, 10).until(
@@ -465,30 +465,30 @@ if dados_inscricao_atual['tem_responsavel_geral'].lower() == 'sim':
                 campo_complemento_responsavel.send_keys(Keys.TAB) 
                 time.sleep(0.5)
 
-            # --- Clicar no botão 'Salvar' do formulário do Responsável ---
-            print("Tentando clicar no botão 'Salvar' do formulário do Responsável...")
-            botao_salvar_responsavel = WebDriverWait(driver, 10).until(
-                EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), 'Salvar')]"))
-            )
-            botao_salvar_responsavel.click()
-            print("Botão 'Salvar' do Responsável clicado com sucesso!")
-            time.sleep(3) 
+                # --- Clicar no botão 'Salvar' do formulário do Responsável ---
+                print("Tentando clicar no botão 'Salvar' do formulário do Responsável...")
+                botao_salvar_responsavel = WebDriverWait(driver, 10).until(
+                    EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), 'Salvar')]"))
+                )
+                botao_salvar_responsavel.click()
+                print("Botão 'Salvar' do Responsável clicado com sucesso!")
+                time.sleep(3) 
 
-            try:
-                if driver.current_window_handle == new_window_handle:
-                    driver.close() 
-                    print("Nova janela/aba do responsável fechada.")
-            except Exception as ex_close:
-                print(f"Erro ao tentar fechar a aba do responsável (pode já ter fechado): {ex_close}")
+                try:
+                    if driver.current_window_handle == new_window_handle:
+                        driver.close() 
+                        print("Nova janela/aba do responsável fechada.")
+                except Exception as ex_close:
+                    print(f"Erro ao tentar fechar a aba do responsável (pode já ter fechado): {ex_close}")
 
-        else:
-            print("Erro: Não foi possível encontrar a nova janela/aba do responsável.")
-            driver.quit()
-            exit()
+                driver.switch_to.window(main_window_handle)
+                print("Foco retornado para a janela principal.")
+                time.sleep(1) 
 
-        driver.switch_to.window(main_window_handle)
-        print("Foco retornado para a janela principal.")
-        time.sleep(1) 
+            else:
+                print("Erro: Não foi possível encontrar a nova janela/aba do responsável.")
+                driver.quit()
+                exit()  
 
     except Exception as e:
         print(f"Erro ao navegar para aba Responsável ou adicionar/preencher/salvar novo: {e}")
