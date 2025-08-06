@@ -443,6 +443,7 @@ if dados_inscricao_atual['tem_responsavel_geral'].lower() == 'sim':
                 )
                 driver.execute_script(f"arguments[0].value = '{responsavel_atual['cep_responsavel']}';", campo_cep_responsavel)
                 driver.execute_script("arguments[0].blur();", campo_cep_responsavel)
+                campo_cep_responsavel.send_keys(Keys.TAB) 
                 time.sleep(3) 
 
             # 7. Número do Endereço do Responsável (Opcional) - name="endereco_numero_responsavel"
@@ -465,30 +466,31 @@ if dados_inscricao_atual['tem_responsavel_geral'].lower() == 'sim':
                 campo_complemento_responsavel.send_keys(Keys.TAB) 
                 time.sleep(0.5)
 
-                # --- Clicar no botão 'Salvar' do formulário do Responsável ---
-                print("Tentando clicar no botão 'Salvar' do formulário do Responsável...")
-                botao_salvar_responsavel = WebDriverWait(driver, 10).until(
-                    EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), 'Salvar')]"))
-                )
-                botao_salvar_responsavel.click()
-                print("Botão 'Salvar' do Responsável clicado com sucesso!")
-                time.sleep(3) 
+            # --- Clicar no botão 'Salvar' do formulário do Responsável ---
+            print("Tentando clicar no botão 'Salvar' do formulário do Responsável...")
+            botao_salvar_responsavel = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), 'Salvar')]"))
+            )
+            botao_salvar_responsavel.click()
+            print("Botão 'Salvar' do Responsável clicado com sucesso!")
+            time.sleep(3) 
 
-                try:
-                    if driver.current_window_handle == new_window_handle:
+            try:
+                if driver.current_window_handle == new_window_handle:
                         driver.close() 
                         print("Nova janela/aba do responsável fechada.")
-                except Exception as ex_close:
+            except Exception as ex_close:
                     print(f"Erro ao tentar fechar a aba do responsável (pode já ter fechado): {ex_close}")
 
-                driver.switch_to.window(main_window_handle)
-                print("Foco retornado para a janela principal.")
-                time.sleep(1) 
+            # AQUI! Indentação corrigida para o nível do 'if new_window_handle:'
+            driver.switch_to.window(main_window_handle)
+            print("Foco retornado para a janela principal.")
+            time.sleep(1) 
 
-            else:
-                print("Erro: Não foi possível encontrar a nova janela/aba do responsável.")
-                driver.quit()
-                exit()  
+        else: # AQUI! Este 'else' agora está alinhado com o 'if new_window_handle:'
+            print("Erro: Não foi possível encontrar a nova janela/aba do responsável.")
+            driver.quit()
+            exit() 
 
     except Exception as e:
         print(f"Erro ao navegar para aba Responsável ou adicionar/preencher/salvar novo: {e}")
