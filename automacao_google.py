@@ -39,6 +39,7 @@ def coletar_dados_do_usuario():
             responsavel_dados['empregado_responsavel'] = input("Responsável Empregado? (sim/nao): ") #
             responsavel_dados['cpf_responsavel'] = input("CPF do Responsável (apenas números): ") #
             responsavel_dados['rg_responsavel'] = input("RG do Responsável (opcional): ") #
+            responsavel_dados['tel_responsavel'] = input("Telefone do Responsável: ") #
             
             # Os dados de CEP, Número e Complemento do Responsável serão reciclados da inscrição principal,
             # mas podemos perguntar se são os mesmos ou se são diferentes para cada responsável
@@ -465,6 +466,32 @@ if dados_inscricao_atual['tem_responsavel_geral'].lower() == 'sim':
                 campo_complemento_responsavel.send_keys(responsavel_atual['complemento_responsavel'])
                 campo_complemento_responsavel.send_keys(Keys.TAB) 
                 time.sleep(0.5)
+                
+            
+            if responsavel_atual['tel_responsavel']:
+                print(f"Preenchendo Telefone do Responsável: {responsavel_atual['tel_responsavel']}")
+                try:
+                    botao_adicionar_telefone = WebDriverWait(driver, 10).until(
+                        EC.element_attribute_to_include((By.XPATH, "//button[contains(text(), 'Adicionar')]"))
+                    )
+                    botao_adicionar_telefone.click()
+                    print("Botão 'Adicionar' telefone clicado com sucesso.")
+                    time.sleep(1)
+                except Exception as e:
+                    print(f"Erro ao tentar clicar no botão 'Adicionar' telefone: {e}")
+
+                campos_telefone = WebDriverWait(driver, 10).until(
+                    EC.presence_of_all_elements_located((By.NAME, "responsavel_contatos[]"))
+                )
+
+                if campos_telefone:
+                    ultimo_campo_telefone = campos_telefone[-1]
+                    ultimo_campo_telefone.send_keys(responsavel_atual['tel_responsavel'])
+                    print(f"Telefone '{responsavel_atual['tel_responsavel']}' preenchido no último campo.")
+                else:
+                    print("Erro: Não foi possível encontrar o campo de telefone para preencher.")
+                time.sleep(0.5)         
+
 
             # --- Clicar no botão 'Salvar' do formulário do Responsável ---
             print("Tentando clicar no botão 'Salvar' do formulário do Responsável...")
