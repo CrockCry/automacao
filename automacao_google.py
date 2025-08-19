@@ -25,6 +25,12 @@ def coletar_dados_do_usuario():
     dados['cep'] = input("CEP (apenas números): ")
     dados['numero_endereco'] = input("Número do Endereço (opcional): ")
     dados['complemento_endereco'] = input("Complemento do Endereço (opcional): ")
+
+    tem_escola = input("A inscrição terá informações escolares? (sim/nao): ").lower()
+    dados['tem_escola'] = 'sim' if tem_escola == 'sim' else 'nao'
+    
+    # tem_autorizado_geral = input("A inscrição terá pelo menos um responsável? (sim/nao): ").lower() #
+    # dados['tem_autorizado_geral'] = 'sim' if tem_autorizado_geral == 'sim' else 'nao' #
     
     dados['responsaveis'] = []
 
@@ -40,11 +46,6 @@ def coletar_dados_do_usuario():
             responsavel_dados['cpf_responsavel'] = input("CPF do Responsável (apenas números): ") #
             responsavel_dados['rg_responsavel'] = input("RG do Responsável (opcional): ") #
             responsavel_dados['tel_responsavel'] = input("Telefone do Responsável: ") #
-            
-            # Os dados de CEP, Número e Complemento do Responsável serão reciclados da inscrição principal,
-            # mas podemos perguntar se são os mesmos ou se são diferentes para cada responsável
-            # Por simplicidade, vamos manter reciclando do principal por enquanto,
-            # mas saiba que pode ser adaptado para serem diferentes.
             responsavel_dados['cep_responsavel'] = dados['cep'] #
             responsavel_dados['numero_responsavel'] = dados['numero_endereco'] #
             responsavel_dados['complemento_responsavel'] = dados['complemento_endereco'] #
@@ -53,7 +54,18 @@ def coletar_dados_do_usuario():
 
             continuar_adicionando_responsavel = input("Adicionar mais um responsável? (sim/nao): ").lower() #
             responsavel_num += 1 #
-            
+ 
+    dados['escola'] = {}
+
+    if dados['tem_escola'] == 'sim':
+        print("\n--- Digite as informações escolares---")
+        # Vamos preencher o dicionário 'escola' diretamente
+        dados['escola']['nome_escola'] = input("Nome da escola: ")
+        dados['escola']['horario_entrada'] = input("Horário de entrada (Ex: 08:00): ")
+        dados['escola']['horario_saida'] = input("Horário de saída (Ex: 12:00): ")
+        dados['escola']['ano_escolar'] = input("Digite o ano escolar (Ex: 5° ano): ")
+        dados['escola']['periodo_escolar'] = input("Digite o período escolar (Ex: Manhã): ")
+         
     return dados
 
 # --- Inicialização do WebDriver ---
@@ -468,11 +480,11 @@ if dados_inscricao_atual['tem_responsavel_geral'].lower() == 'sim':
                 time.sleep(0.5)
                 
             
-            if responsavel_atual['tel_responsavel']:
-                print(f"Preenchendo Telefone do Responsável: {responsavel_atual['tel_responsavel']}")
+            if 'tel_responsavel' in responsavel_atual and responsavel_atual['tel_responsavel']:
+                print(f"Adicionando Telefone do Responsável: {responsavel_atual['tel_responsavel']}")
                 try:
                     botao_adicionar_telefone = WebDriverWait(driver, 10).until(
-                        EC.element_attribute_to_include((By.XPATH, "//button[contains(text(), 'Adicionar')]"))
+                        EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), 'Adicionar')]"))
                     )
                     botao_adicionar_telefone.click()
                     print("Botão 'Adicionar' telefone clicado com sucesso.")
@@ -490,17 +502,19 @@ if dados_inscricao_atual['tem_responsavel_geral'].lower() == 'sim':
                     print(f"Telefone '{responsavel_atual['tel_responsavel']}' preenchido no último campo.")
                 else:
                     print("Erro: Não foi possível encontrar o campo de telefone para preencher.")
-                time.sleep(0.5)         
+                time.sleep(1)                  
 
 
             # --- Clicar no botão 'Salvar' do formulário do Responsável ---
             print("Tentando clicar no botão 'Salvar' do formulário do Responsável...")
             botao_salvar_responsavel = WebDriverWait(driver, 10).until(
-                EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), 'Salvar')]"))
+                EC.presence_of_element_located((By.XPATH, "//button[contains(text(), 'Salvar')]"))
             )
-            botao_salvar_responsavel.click()
+            driver.execute_script("arguments[0].click();", botao_salvar_responsavel)
             print("Botão 'Salvar' do Responsável clicado com sucesso!")
             time.sleep(3) 
+
+            WebDriverWait(driver, 10).until(EC.number_of_windows_to_be(1))
 
             try:
                 if driver.current_window_handle == new_window_handle:
@@ -531,9 +545,123 @@ if dados_inscricao_atual['tem_responsavel_geral'].lower() == 'sim':
 else:
     print("Inscrição sem responsável, pulando a seção de Responsáveis.")
 
+if dados_inscricao_atual['tem_escola'].lower() == 'sim':
+    try:
+        print("\n--- Iniciando a seção de Instituição de Ensino ---")
+        
+        # 1. Clicar na aba 'Instituição de Ensino'
+        print("Tentando clicar na aba 'Instituição de Ensino'...")
+        tab_instituicao = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.LINK_TEXT, "Instituição de Ensino"))
+        )
+        tab_instituicao.click()
+        print("Aba 'Instituição de Ensino' clicada com sucesso!")
+        time.sleep(2) # Espera a aba carregar
+        
+        dados_escola_atual = dados_inscricao_atual['escola']
+        
+        # 2. Abrir o Dropdown, selecionar a escola e clicar em 'Adicionar'
+        if 'nome_escola' in dados_escola_atual and dados_escola_atual['nome_escola']:
+            print(f"Buscando e selecionando a escola: {dados_escola_atual['nome_escola']}")
+            try:
+                # Tentativa de clique no container principal do select2
+                # O XPath abaixo busca pelo label 'Instituição de Ensino' e depois o container do select2
+                dropdown_container = WebDriverWait(driver, 10).until(
+                    EC.element_to_be_clickable((By.XPATH, "//label[text()='Instituição de Ensino']/following-sibling::span[1]"))
+                )
+                dropdown_container.click()
+                print("Dropdown de 'Instituição de Ensino' clicado.")
+                
+                # Aguardar o campo de busca aparecer
+                campo_busca_escola = WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, ".select2-search__field"))
+                )
+                # Digitar o nome da escola para buscar
+                campo_busca_escola.send_keys(dados_escola_atual['nome_escola'])
+                
+                # Clicar no resultado da busca
+                opcao_escola = WebDriverWait(driver, 10).until(
+                    EC.element_to_be_clickable((By.XPATH, f"//li[contains(text(), '{dados_escola_atual['nome_escola']}')]"))
+                )
+                opcao_escola.click()
+                print(f"Escola '{dados_escola_atual['nome_escola']}' selecionada com sucesso.")
+                time.sleep(1)
 
+            except Exception as e:
+                print(f"Erro ao selecionar a escola: {e}")
+                # Aqui, como o problema está persistindo, podemos adicionar um tratamento
+                # para tentar um clique com JavaScript se o clique normal falhar.
+                # Como a automação não vai prosseguir sem a escola, vamos parar aqui.
+                # Outra opção seria usar o JavaScript diretamente na primeira tentativa.
+                raise e # Propaga o erro para ser capturado no 'except' principal
+        
+        # Clicar no botão 'Adicionar' (depois que a escola já foi selecionada no dropdown)
+        print("Tentando clicar no botão 'Adicionar' da Instituição de Ensino...")
+        botao_adicionar_escola = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.ID, "add-instituicao-btn"))
+        )
+        botao_adicionar_escola.click()
+        print("Botão 'Adicionar' da Instituição de Ensino clicado com sucesso!")
+        time.sleep(2) # Espera os campos de horário aparecerem
+
+        # 3. Preencher os horários, ano e período
+        # A ordem agora está correta: primeiro adiciona a escola, depois preenche o resto
+        
+        # Horário de Entrada
+        if 'horario_entrada' in dados_escola_atual and dados_escola_atual['horario_entrada']:
+            print(f"Preenchendo horário de entrada: {dados_escola_atual['horario_entrada']}")
+            campo_entrada = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.NAME, "horario_entrada"))
+            )
+            campo_entrada.send_keys(dados_escola_atual['horario_entrada'])
+            time.sleep(0.5)
+
+        # Horário de Saída
+        if 'horario_saida' in dados_escola_atual and dados_escola_atual['horario_saida']:
+            print(f"Preenchendo horário de saída: {dados_escola_atual['horario_saida']}")
+            campo_saida = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.NAME, "horario_saida"))
+            )
+            campo_saida.send_keys(dados_escola_atual['horario_saida'])
+            time.sleep(0.5)
+            
+        # Ano Escolar
+        if 'ano_escolar' in dados_escola_atual and dados_escola_atual['ano_escolar']:
+            print(f"Preenchendo ano escolar: {dados_escola_atual['ano_escolar']}")
+            campo_ano_escolar = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.NAME, "ano_escolar"))
+            )
+            campo_ano_escolar.send_keys(dados_escola_atual['ano_escolar'])
+            time.sleep(0.5)
+            
+        # Período Escolar
+        if 'periodo_escolar' in dados_escola_atual and dados_escola_atual['periodo_escolar']:
+            print(f"Preenchendo período escolar: {dados_escola_atual['periodo_escolar']}")
+            campo_periodo = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.NAME, "periodo_escolar"))
+            )
+            campo_periodo.send_keys(dados_escola_atual['periodo_escolar'])
+            time.sleep(0.5)
+        
+        # 4. Clicar no botão 'Salvar'
+        print("Tentando clicar no botão 'Salvar' final da aba de Instituição de Ensino...")
+        botao_salvar_escola = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), 'Salvar')]"))
+        )
+        botao_salvar_escola.click()
+        print("Botão 'Salvar' da Instituição de Ensino clicado com sucesso!")
+        time.sleep(3) 
+
+    except Exception as e:
+        print(f"Erro ao preencher ou salvar a seção de Instituição de Ensino: {e}")
+        driver.quit()
+        exit()
+
+else:
+    print("Inscrição sem informações escolares, pulando a seção de Instituição de Ensino.")
+        
 print(f"\n--- Processo de inscrição para {dados_inscricao_atual['nome_completo']} concluído! ---")
 time.sleep(5) 
 print("Fechando o navegador.")
 driver.quit()
-print("Automação concluída!")
+print("Automação concluída!") 
